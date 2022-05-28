@@ -1,6 +1,6 @@
 from .. import util
 from ..config import Defaults
-from random import randint
+from random import choice
 import pygame as pg
 
 defaults = Defaults()
@@ -24,15 +24,12 @@ class Fruit:
             return True
 
         valid_coords = util.filter_display_coords(self.display, _filter)
-        valid_coords_length = len(valid_coords)
 
-        if valid_coords_length > 1 and self.coords in valid_coords:
+        if len(valid_coords) > 1 and self.coords in valid_coords:
             valid_coords.remove(self.coords)
-            valid_coords_length = len(valid_coords)
 
-        if valid_coords_length > 0:
-            random_idx = randint(0, valid_coords_length - 1)
-            self.coords = valid_coords[random_idx]
+        if len(valid_coords) > 0:
+            self.coords = choice(valid_coords)
             return False
 
         return True

@@ -77,7 +77,7 @@ def main():
                     if not valid_move:
                         break
                 fruit_rect = fruit.get_rect()
-                player_head_rect = player.head.get_rect()
+                player_head_rect = player.get_head().get_rect()
                 if player_head_rect.colliderect(fruit_rect):
                     player.add_node()
                     player.points += 1

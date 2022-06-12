@@ -5,81 +5,89 @@ defaults = Defaults()
 
 
 class Snake:
-    def __init__(self, display, nodes_amount, coords=[0, 0]):
+    def __init__(self, display, amount_of_nodes):
         self.display = display
-        self.head_color = defaults.snake_head_color
         self.points = 0
-
-        self.head = self.tail = None
+        self._nodes = []
         self.add_node(defaults.snake_head_color)
 
-        for _ in range(1, nodes_amount):
+        for _ in range(1, amount_of_nodes):
             self.add_node()
 
         self.set_direction(defaults.direction)
 
+    def get_all_nodes(self):
+        # Since copy() creates a shallow copy, this isn't a problem
+        return self._nodes.copy()
+
+    def get_node(self, index):
+        nodes = self.get_all_nodes()
+        if index < 0:
+            index = len(nodes) + index
+        if len(nodes) <= 0 or index not in range(len(nodes)):
+            return None
+        else:
+            return nodes[index]
+
+    def get_head(self):
+        return self.get_node(0)
+
+    def get_tail(self):
+        return self.get_node(-1)
+
     def get_node_coords(self):
         node_coords = []
+        nodes = self.get_all_nodes()
+        nodes.reverse()
 
-        def add_to_list(node):
-            nonlocal node_coords
+        for node in nodes:
             node_coords.append(node.coords)
 
-        self.traverse_nodes_backward(add_to_list)
         return node_coords
 
     def set_direction(self, direction):
-        self.head.direction = direction
+        self.get_head().direction = direction
 
     def get_direction(self):
-        return self.head.direction
+        return self.get_head().direction
 
     def move(self):
-        def move_node(node):
-            node.move()
+        nodes = self.get_all_nodes()
+        head = self.get_head()
+        tail = self.get_tail()
 
-        self.traverse_nodes_backward(move_node)
+        for i, node in enumerate(nodes):
+            if node == tail:
+                node.old_position = node.coords
 
-        def check_collision(node):
+            if node == head:
+                node.old_position = node.coords
+                node.coords = node.get_new_coords_by_current_direction()
+            else:
+                node.old_position = node.coords
+                next_idx = i - 1
+                if next_idx in range(0, len(nodes) - 1):
+                    next = nodes[next_idx]
+                    node.coords = next.old_position
+
             if (
-                self.head.coords is not False
-                and not node.is_head()
-                and node.get_rect().colliderect(self.head.get_rect())
+                head.coords is not False
+                and node != head
+                and node.get_rect().colliderect(head.get_rect())
             ):
-                self.head.coords = False
+                head.coords = False
+                break
 
-        self.traverse_nodes_forward(check_collision)
-        return self.head.coords
+        return head.coords
 
     def update(self):
-        def update_node(node):
+        nodes = self.get_all_nodes()
+        for node in nodes:
             node.update()
 
-        self.traverse_nodes_forward(update_node)
-
     def add_node(self, *args):
-        new_tail = Node(self.display, *args)
-        if self.head is None:
-            self.head = new_tail
-        else:
-            old_tail = self.tail
-            old_tail.next = new_tail
-            new_tail.previous = old_tail
-            new_tail.coords = old_tail.old_position
-        self.tail = new_tail
-
-    def traverse_nodes_forward(self, cb):
-        current_node = self.head
-        while True:
-            if current_node is None:
-                break
-            cb(current_node)
-            current_node = current_node.next
-
-    def traverse_nodes_backward(self, cb):
-        current_node = self.tail
-        while True:
-            if current_node is None:
-                break
-            cb(current_node)
-            current_node = current_node.previous
+        node = Node(self.display, *args)
+        old_tail = self.get_tail()
+        if old_tail is not None:
+            node.coords = old_tail.old_position
+        self._nodes.append(node)
